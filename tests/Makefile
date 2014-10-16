@@ -25,8 +25,11 @@ CC = $(CROSS)gcc
 endif
 
 
-CFLAGS += -O3 -Wall -I$(INCDIR)
+CFLAGS += -Wall -I$(INCDIR)
 LDFLAGS += -L$(LIBDIR)
+
+CFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
+LDFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
 
 LIBNAME = capstone
 
@@ -61,7 +64,7 @@ endif
 
 .PHONY: all clean
 
-SOURCES = test.c test_detail.c test_skipdata.c
+SOURCES = test.c test_detail.c test_skipdata.c test_iter.c
 ifneq (,$(findstring arm,$(CAPSTONE_ARCHS)))
 SOURCES += test_arm.c
 endif
@@ -128,12 +131,12 @@ endif
 
 
 define link-dynamic
-	${CC} $(CFLAGS) $(LDFLAGS) $< -O3 -Wall -l$(LIBNAME) -o $@
+	$(CC) $(LDFLAGS) $< -l$(LIBNAME) -o $@
 endef
 
 
 define link-static
-	${CC} $(CFLAGS) $(LDFLAGS) $< -O3 -Wall $(ARCHIVE) -o $(call staticname,$@)
+	$(CC) $(LDFLAGS) $< $(ARCHIVE) -o $(call staticname,$@)
 endef
 
 

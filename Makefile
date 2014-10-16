@@ -33,11 +33,18 @@ else
 CFLAGS ?= -O3
 endif
 
+ifneq (,$(findstring yes,$(CAPSTONE_X86_ATT_DISABLE)))
+CFLAGS += -DCAPSTONE_X86_ATT_DISABLE
+endif
+
 CFLAGS += -fPIC -Wall -Iinclude
 
 ifeq ($(CAPSTONE_USE_SYS_DYN_MEM),yes)
 CFLAGS += -DCAPSTONE_USE_SYS_DYN_MEM
 endif
+
+CFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
+LDFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
 
 PREFIX ?= /usr
 DESTDIR ?=
@@ -198,7 +205,9 @@ ifneq (,$(findstring x86,$(CAPSTONE_ARCHS)))
 	LIBOBJ_X86 += $(OBJDIR)/arch/X86/X86IntelInstPrinter.o
 # assembly syntax is irrelevant in Diet mode, when this info is suppressed
 ifeq (,$(findstring yes,$(CAPSTONE_DIET)))
+ifeq (,$(findstring yes,$(CAPSTONE_X86_ATT_DISABLE)))
 	LIBOBJ_X86 += $(OBJDIR)/arch/X86/X86ATTInstPrinter.o
+endif
 endif
 	LIBOBJ_X86 += $(OBJDIR)/arch/X86/X86Mapping.o
 	LIBOBJ_X86 += $(OBJDIR)/arch/X86/X86Module.o
@@ -351,8 +360,6 @@ endif
 install: $(PKGCFGF) $(ARCHIVE) $(LIBRARY)
 	mkdir -p $(LIBDIR)
 ifeq ($(CAPSTONE_SHARED),yes)
-	# remove potential broken old libs
-	rm -f $(LIBDIR)/lib$(LIBNAME).*
 	$(INSTALL_LIB) $(LIBRARY) $(LIBDIR)
 ifneq ($(VERSION_EXT),)
 	cd $(LIBDIR) && \
@@ -400,6 +407,19 @@ dist:
 	git archive --format=tar.gz --prefix=capstone-$(DIST_VERSION)/ $(TAG) > capstone-$(DIST_VERSION).tgz
 	git archive --format=zip --prefix=capstone-$(DIST_VERSION)/ $(TAG) > capstone-$(DIST_VERSION).zip
 
+
+TESTS = test test_detail test_arm test_arm64 test_mips test_ppc test_sparc
+TESTS += test_systemz test_x86 test_xcore
+TESTS += test.static test_detail.static test_arm.static test_arm64.static
+TESTS += test_mips.static test_ppc.static test_sparc.static
+TESTS += test_systemz.static test_x86.static test_xcore.static
+TESTS += test_skipdata test_skipdata.static
+check:
+	@for t in $(TESTS); do \
+		echo Check $$t ... ; \
+		./tests/$$t > /dev/null && echo OK || echo FAILED; \
+	done
+
 $(OBJDIR)/%.o: %.c
 	@mkdir -p $(@D)
 ifeq ($(V),0)
@@ -426,7 +446,7 @@ define generate-pkgcfg
 	echo 'Description: Capstone disassembly engine' >> $(PKGCFGF)
 	echo 'Version: $(PKG_VERSION)' >> $(PKGCFGF)
 	echo 'libdir=$(LIBDIR)' >> $(PKGCFGF)
-	echo 'includedir=$(PREFIX)/include/capstone' >> $(PKGCFGF)
+	echo 'includedir=$(INCDIR)/capstone' >> $(PKGCFGF)
 	echo 'archive=$${libdir}/libcapstone.a' >> $(PKGCFGF)
 	echo 'Libs: -L$${libdir} -lcapstone' >> $(PKGCFGF)
 	echo 'Cflags: -I$${includedir}' >> $(PKGCFGF)

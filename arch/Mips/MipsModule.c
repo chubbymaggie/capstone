@@ -15,7 +15,7 @@ static cs_err init(cs_struct *ud)
 
 	// verify if requested mode is valid
 	if (ud->mode & ~(CS_MODE_LITTLE_ENDIAN | CS_MODE_32 | CS_MODE_64 |
-				CS_MODE_MICRO | CS_MODE_N64 | CS_MODE_BIG_ENDIAN))
+				CS_MODE_MICRO | CS_MODE_BIG_ENDIAN))
 		return CS_ERR_MODE;
 
 	mri = cs_mem_malloc(sizeof(*mri));
@@ -27,6 +27,7 @@ static cs_err init(cs_struct *ud)
 	ud->reg_name = Mips_reg_name;
 	ud->insn_id = Mips_get_insn_id;
 	ud->insn_name = Mips_insn_name;
+	ud->group_name = Mips_group_name;
 
 	if (ud->mode & CS_MODE_32)
 		ud->disasm = Mips_getInstruction;
