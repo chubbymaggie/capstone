@@ -1,9 +1,14 @@
-/* Capstone Disassembler Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013> */
+/* Capstone Disassembly Engine */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2013-2014 */
 
 #ifndef CS_UTILS_H
 #define CS_UTILS_H
 
+#if defined(CAPSTONE_HAS_OSXKERNEL)
+#include <libkern/libkern.h>
+#else
+#include <stddef.h>
+#endif
 #include "include/capstone.h"
 #include "cs_priv.h"
 
@@ -22,10 +27,6 @@ typedef struct insn_map {
 	bool indirect_branch;	// indirect branch instruction?
 #endif
 } insn_map;
-
-// return the position of a string in a list of strings
-// or -1 if given string is not in the list
-int str_in_list(char **list, char *s);
 
 // look for @id in @m, given its size in @max. first time call will update @cache.
 // return 0 if not found
@@ -48,6 +49,11 @@ unsigned int count_positive(unsigned char *list);
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
 char *cs_strdup(const char *str);
+
+#define MIN(x, y) ((x) < (y) ? (x) : (y))
+
+// we need this since Windows doesnt have snprintf()
+int cs_snprintf(char *buffer, size_t size, const char *fmt, ...);
 
 #endif
 
